@@ -113,12 +113,14 @@ export default function MnavChart({ data }: Props) {
       y: {
         type: logScale ? "logarithmic" : "linear",
         position: "left",
+        beginAtZero: false,
         ticks: { color: "#34d399", callback: (v) => `${v}x` },
         grid: { color: "rgba(75,85,99,0.15)" },
       },
       y1: {
         type: logScale ? "logarithmic" : "linear",
         position: "right",
+        beginAtZero: false,
         ticks: {
           color: "#f59e0b",
           callback: (v) => `$${(Number(v) / 1000).toFixed(0)}k`,

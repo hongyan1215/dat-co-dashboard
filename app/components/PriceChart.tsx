@@ -100,6 +100,7 @@ export default function PriceChart({ data }: Props) {
       y: {
         type: logScale ? "logarithmic" : "linear",
         position: "left",
+        beginAtZero: false,
         ticks: {
           color: "#818cf8",
           callback: (v) => `$${Number(v).toLocaleString()}`,
@@ -109,6 +110,7 @@ export default function PriceChart({ data }: Props) {
       y1: {
         type: logScale ? "logarithmic" : "linear",
         position: "right",
+        beginAtZero: false,
         ticks: {
           color: "#f59e0b",
           callback: (v) => `$${(Number(v) / 1000).toFixed(0)}k`,

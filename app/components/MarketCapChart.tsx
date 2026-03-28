@@ -117,6 +117,7 @@ export default function MarketCapChart({ data }: Props) {
       },
       y: {
         type: logScale ? "logarithmic" : "linear",
+        beginAtZero: false,
         ticks: {
           color: "#9ca3af",
           callback: (v) => `$${Number(v).toFixed(0)}B`,
