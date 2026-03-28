@@ -59,7 +59,7 @@ export default function AiInsights({ data }: Props) {
       ) : !loading ? (
         <p className="text-sm text-gray-600">
           Click &quot;Generate Analysis&quot; to get AI-powered insights on
-          current mNAV trends. Requires OPENAI_API_KEY.
+          current mNAV trends. Powered by GPT-4o.
         </p>
       ) : (
         <div className="space-y-2">

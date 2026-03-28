@@ -9,6 +9,7 @@ import {
 } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,7 +27,6 @@ export async function GET(request: Request) {
       fetchMstrData(period1, period2),
     ]);
 
-    // Index BTC prices by date
     const btcMap = new Map(btcPrices.map((b) => [b.date, b.price]));
 
     const results: DailyData[] = [];
