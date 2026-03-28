@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  LogarithmicScale,
   PointElement,
   LineElement,
   Title,
@@ -17,6 +19,7 @@ import type { DailyData } from "@/lib/data";
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  LogarithmicScale,
   PointElement,
   LineElement,
   Title,
@@ -29,17 +32,17 @@ interface Props {
 }
 
 export default function PriceChart({ data }: Props) {
+  const [logScale, setLogScale] = useState(false);
   const labels = data.map((d) => d.date);
 
   const chartData = {
     labels,
     datasets: [
       {
-        label: "MSTR Stock Price (USD)",
+        label: "MSTR Price",
         data: data.map((d) => d.mstrPrice),
         borderColor: "#818cf8",
-        backgroundColor: "rgba(129, 140, 248, 0.1)",
-        fill: true,
+        backgroundColor: "transparent",
         tension: 0.3,
         pointRadius: 0,
         pointHitRadius: 10,
@@ -47,15 +50,15 @@ export default function PriceChart({ data }: Props) {
         yAxisID: "y",
       },
       {
-        label: "BTC Price (USD)",
+        label: "BTC Price",
         data: data.map((d) => d.btcPrice),
         borderColor: "#f59e0b",
         backgroundColor: "transparent",
         tension: 0.3,
         pointRadius: 0,
         pointHitRadius: 10,
-        borderWidth: 1.5,
-        borderDash: [4, 4],
+        borderWidth: 2,
+        borderDash: [5, 5],
         yAxisID: "y1",
       },
     ],
@@ -70,32 +73,41 @@ export default function PriceChart({ data }: Props) {
         labels: { color: "#9ca3af", usePointStyle: true, pointStyleWidth: 10 },
       },
       tooltip: {
-        backgroundColor: "#1f2937",
+        backgroundColor: "rgba(17,24,39,0.95)",
         titleColor: "#f3f4f6",
         bodyColor: "#d1d5db",
         borderColor: "#374151",
         borderWidth: 1,
+        padding: 12,
         callbacks: {
           label(ctx) {
-            return `${ctx.dataset.label}: $${(ctx.parsed?.y ?? 0).toLocaleString()}`;
+            return ` ${ctx.dataset.label}: $${(ctx.parsed?.y ?? 0).toLocaleString()}`;
+          },
+          afterBody(items) {
+            const idx = items[0]?.dataIndex;
+            if (idx == null) return "";
+            const d = data[idx];
+            return `\n mNAV: ${d.mNAV.toFixed(2)}x · Holdings: ${d.btcHoldings.toLocaleString()} BTC`;
           },
         },
       },
     },
     scales: {
       x: {
-        ticks: { color: "#6b7280", maxTicksLimit: 8 },
-        grid: { color: "rgba(75,85,99,0.2)" },
+        ticks: { color: "#6b7280", maxTicksLimit: 8, font: { size: 11 } },
+        grid: { color: "rgba(75,85,99,0.15)" },
       },
       y: {
+        type: logScale ? "logarithmic" : "linear",
         position: "left",
         ticks: {
           color: "#818cf8",
           callback: (v) => `$${Number(v).toLocaleString()}`,
         },
-        grid: { color: "rgba(75,85,99,0.2)" },
+        grid: { color: "rgba(75,85,99,0.15)" },
       },
       y1: {
+        type: logScale ? "logarithmic" : "linear",
         position: "right",
         ticks: {
           color: "#f59e0b",
@@ -107,10 +119,21 @@ export default function PriceChart({ data }: Props) {
   };
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-      <h2 className="text-sm font-medium text-gray-300 mb-4">
-        MSTR & BTC Price Comparison
-      </h2>
+    <div className="bg-gray-900/50 backdrop-blur rounded-2xl border border-gray-800 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-200">
+            MSTR vs BTC Price
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">Dual-axis price comparison</p>
+        </div>
+        <button
+          onClick={() => setLogScale(!logScale)}
+          className="px-3 py-1 rounded-lg text-xs font-medium border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+        >
+          {logScale ? "Linear" : "Log"}
+        </button>
+      </div>
       <div className="h-72">
         <Line data={chartData} options={options} />
       </div>
