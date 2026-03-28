@@ -7,7 +7,7 @@ export interface DailyData {
   mNAV: number;
 }
 
-// MicroStrategy (now Strategy) known BTC holdings milestones
+// Strategy Inc. BTC holdings from https://www.strategy.com/purchases
 const BTC_HOLDINGS_TIMELINE: { date: string; holdings: number }[] = [
   { date: "2023-01-01", holdings: 132500 },
   { date: "2023-04-01", holdings: 140000 },
@@ -24,7 +24,29 @@ const BTC_HOLDINGS_TIMELINE: { date: string; holdings: number }[] = [
   { date: "2025-02-01", holdings: 471107 },
   { date: "2025-03-01", holdings: 499096 },
   { date: "2025-06-01", holdings: 506137 },
-  { date: "2026-01-01", holdings: 506137 },
+  { date: "2025-08-11", holdings: 629376 },
+  { date: "2025-09-02", holdings: 636505 },
+  { date: "2025-09-29", holdings: 640031 },
+  { date: "2025-10-13", holdings: 640250 },
+  { date: "2025-11-03", holdings: 641205 },
+  { date: "2025-11-17", holdings: 649870 },
+  { date: "2025-12-01", holdings: 650000 },
+  { date: "2025-12-08", holdings: 660624 },
+  { date: "2025-12-15", holdings: 671268 },
+  { date: "2025-12-29", holdings: 672497 },
+  { date: "2025-12-31", holdings: 672500 },
+  { date: "2026-01-05", holdings: 673783 },
+  { date: "2026-01-12", holdings: 687410 },
+  { date: "2026-01-20", holdings: 709715 },
+  { date: "2026-01-26", holdings: 712647 },
+  { date: "2026-02-02", holdings: 713502 },
+  { date: "2026-02-09", holdings: 714644 },
+  { date: "2026-02-17", holdings: 717131 },
+  { date: "2026-02-23", holdings: 717722 },
+  { date: "2026-03-02", holdings: 720737 },
+  { date: "2026-03-09", holdings: 738731 },
+  { date: "2026-03-16", holdings: 761068 },
+  { date: "2026-03-23", holdings: 762099 },
 ];
 
 export function getBtcHoldings(dateStr: string): number {
@@ -38,15 +60,34 @@ export function getBtcHoldings(dateStr: string): number {
 }
 
 // Shares outstanding (post 10:1 split on 2024-08-08)
-// Yahoo returns split-adjusted prices, so we use post-split share counts
+// ADSO from https://www.strategy.com/purchases
 function getSharesOutstanding(dateStr: string): number {
-  if (dateStr >= "2026-03-01") return 326000000;   // ~326M per SEC filing Mar 2026
-  if (dateStr >= "2025-12-01") return 284000000;   // ~284M end of 2025
-  if (dateStr >= "2025-06-01") return 244000000;   // ~244M mid 2025
-  if (dateStr >= "2025-01-01") return 218500000;   // ~218.5M early 2025
-  if (dateStr >= "2024-10-01") return 182000000;   // ~182M Q4 2024
-  if (dateStr >= "2024-08-08") return 166900000;   // post-split ~166.9M
-  // Pre-split: Yahoo adjusts prices by /10, so we use post-split equivalent
+  if (dateStr >= "2026-03-16") return 377340000;
+  if (dateStr >= "2026-03-09") return 374506000;
+  if (dateStr >= "2026-03-02") return 368154000;
+  if (dateStr >= "2026-02-23") return 366419000;
+  if (dateStr >= "2026-02-09") return 365461000;
+  if (dateStr >= "2026-02-02") return 364845000;
+  if (dateStr >= "2026-01-26") return 364173000;
+  if (dateStr >= "2026-01-20") return 362606000;
+  if (dateStr >= "2026-01-12") return 352204000;
+  if (dateStr >= "2026-01-05") return 345632000;
+  if (dateStr >= "2025-12-31") return 344897000;
+  if (dateStr >= "2025-12-29") return 343641000;
+  if (dateStr >= "2025-12-15") return 338444000;
+  if (dateStr >= "2025-12-08") return 333631000;
+  if (dateStr >= "2025-12-01") return 328510000;
+  if (dateStr >= "2025-11-17") return 320283000;
+  if (dateStr >= "2025-11-03") return 320277000;
+  if (dateStr >= "2025-09-29") return 320094000;
+  if (dateStr >= "2025-09-15") return 319500000;
+  if (dateStr >= "2025-09-02") return 318877000;
+  if (dateStr >= "2025-08-25") return 317624000;
+  if (dateStr >= "2025-08-18") return 316727000;
+  if (dateStr >= "2025-06-01") return 244000000;
+  if (dateStr >= "2025-01-01") return 218500000;
+  if (dateStr >= "2024-10-01") return 182000000;
+  if (dateStr >= "2024-08-08") return 166900000;
   return 166900000;
 }
 
@@ -147,12 +188,16 @@ export const FALLBACK_DATA: DailyData[] = [
   { date: "2025-06-01", mstrPrice: 360.0, mstrMarketCap: 87.8e9, btcPrice: 103000, btcHoldings: 506137, mNAV: 1.68 },
   { date: "2025-07-01", mstrPrice: 320.0, mstrMarketCap: 78.1e9, btcPrice: 98000, btcHoldings: 506137, mNAV: 1.57 },
   { date: "2025-08-01", mstrPrice: 280.0, mstrMarketCap: 68.3e9, btcPrice: 91000, btcHoldings: 506137, mNAV: 1.48 },
-  { date: "2025-09-01", mstrPrice: 260.0, mstrMarketCap: 63.4e9, btcPrice: 85000, btcHoldings: 506137, mNAV: 1.47 },
-  { date: "2025-10-01", mstrPrice: 290.0, mstrMarketCap: 70.8e9, btcPrice: 89000, btcHoldings: 506137, mNAV: 1.57 },
-  { date: "2025-11-01", mstrPrice: 310.0, mstrMarketCap: 75.6e9, btcPrice: 92000, btcHoldings: 506137, mNAV: 1.62 },
-  { date: "2025-12-01", mstrPrice: 330.0, mstrMarketCap: 80.5e9, btcPrice: 88000, btcHoldings: 506137, mNAV: 1.81 },
-  { date: "2026-01-02", mstrPrice: 350.0, mstrMarketCap: 85.4e9, btcPrice: 94000, btcHoldings: 506137, mNAV: 1.80 },
-  { date: "2026-02-01", mstrPrice: 320.0, mstrMarketCap: 78.1e9, btcPrice: 90000, btcHoldings: 506137, mNAV: 1.71 },
-  { date: "2026-03-01", mstrPrice: 340.0, mstrMarketCap: 83.0e9, btcPrice: 87000, btcHoldings: 506137, mNAV: 1.88 },
-  { date: "2026-03-28", mstrPrice: 335.0, mstrMarketCap: 81.7e9, btcPrice: 86500, btcHoldings: 506137, mNAV: 1.87 },
+  { date: "2025-09-01", mstrPrice: 260.0, mstrMarketCap: 82.9e9, btcPrice: 85000, btcHoldings: 636505, mNAV: 1.53 },
+  { date: "2025-10-01", mstrPrice: 290.0, mstrMarketCap: 92.8e9, btcPrice: 89000, btcHoldings: 640250, mNAV: 1.63 },
+  { date: "2025-11-01", mstrPrice: 310.0, mstrMarketCap: 99.3e9, btcPrice: 92000, btcHoldings: 641205, mNAV: 1.68 },
+  { date: "2025-12-01", mstrPrice: 330.0, mstrMarketCap: 108.4e9, btcPrice: 88000, btcHoldings: 650000, mNAV: 1.90 },
+  { date: "2025-12-15", mstrPrice: 340.0, mstrMarketCap: 115.1e9, btcPrice: 92000, btcHoldings: 671268, mNAV: 1.86 },
+  { date: "2026-01-05", mstrPrice: 295.0, mstrMarketCap: 102.0e9, btcPrice: 90000, btcHoldings: 673783, mNAV: 1.68 },
+  { date: "2026-01-20", mstrPrice: 310.0, mstrMarketCap: 112.4e9, btcPrice: 95000, btcHoldings: 709715, mNAV: 1.67 },
+  { date: "2026-02-02", mstrPrice: 280.0, mstrMarketCap: 102.2e9, btcPrice: 88000, btcHoldings: 713502, mNAV: 1.63 },
+  { date: "2026-02-17", mstrPrice: 250.0, mstrMarketCap: 91.5e9, btcPrice: 68000, btcHoldings: 717131, mNAV: 1.88 },
+  { date: "2026-03-02", mstrPrice: 185.0, mstrMarketCap: 68.1e9, btcPrice: 68000, btcHoldings: 720737, mNAV: 1.39 },
+  { date: "2026-03-16", mstrPrice: 150.0, mstrMarketCap: 56.6e9, btcPrice: 70000, btcHoldings: 761068, mNAV: 1.06 },
+  { date: "2026-03-27", mstrPrice: 126.0, mstrMarketCap: 47.6e9, btcPrice: 68800, btcHoldings: 762099, mNAV: 0.91 },
 ];
