@@ -114,7 +114,7 @@ export default function MnavChart({ data }: Props) {
         type: logScale ? "logarithmic" : "linear",
         position: "left",
         beginAtZero: false,
-        ticks: { color: "#34d399", callback: (v) => `${v}x` },
+        ticks: { color: "#34d399", callback: (v) => `${parseFloat(Number(v).toFixed(2))}x` },
         grid: { color: "rgba(75,85,99,0.15)" },
       },
       y1: {
