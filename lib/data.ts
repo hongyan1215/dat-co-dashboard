@@ -105,7 +105,13 @@ async function fetchScrapedData(): Promise<{
     if (!res.ok) return null;
 
     const html = await res.text();
-    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+    const startTag = '<script id="__NEXT_DATA__" type="application/json">';
+    const startIdx = html.indexOf(startTag);
+    const endTag = '</script>';
+    const endIdx = startIdx >= 0 ? html.indexOf(endTag, startIdx + startTag.length) : -1;
+    const match = startIdx >= 0 && endIdx >= 0
+      ? [null, html.substring(startIdx + startTag.length, endIdx)]
+      : null;
     if (!match?.[1]) return null;
 
     const nextData = JSON.parse(match[1]);
