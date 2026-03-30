@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     for (const m of mstrEntries) {
       const btcPrice = btcMap.get(m.date);
       if (!btcPrice) continue;
-      const holdings = getBtcHoldings(m.date);
+      const holdings = await getBtcHoldings(m.date);
       const mNAV = calculateMNAV(m.marketCap, holdings, btcPrice);
       results.push({
         date: m.date,

@@ -7,8 +7,8 @@ export interface DailyData {
   mNAV: number;
 }
 
-// Strategy Inc. BTC holdings from https://www.strategy.com/purchases
-const BTC_HOLDINGS_TIMELINE: { date: string; holdings: number }[] = [
+// Fallback BTC holdings (used when scraper is unavailable)
+const FALLBACK_BTC_HOLDINGS: { date: string; holdings: number }[] = [
   { date: "2023-01-01", holdings: 132500 },
   { date: "2023-04-01", holdings: 140000 },
   { date: "2023-07-01", holdings: 152800 },
@@ -49,9 +49,120 @@ const BTC_HOLDINGS_TIMELINE: { date: string; holdings: number }[] = [
   { date: "2026-03-23", holdings: 762099 },
 ];
 
-export function getBtcHoldings(dateStr: string): number {
-  let holdings = BTC_HOLDINGS_TIMELINE[0].holdings;
-  for (const entry of BTC_HOLDINGS_TIMELINE) {
+// Fallback shares outstanding (used when scraper is unavailable)
+const FALLBACK_SHARES: { date: string; shares: number }[] = [
+  { date: "2024-08-08", shares: 166900000 },
+  { date: "2024-10-01", shares: 182000000 },
+  { date: "2025-01-01", shares: 218500000 },
+  { date: "2025-06-01", shares: 244000000 },
+  { date: "2025-08-18", shares: 316727000 },
+  { date: "2025-08-25", shares: 317624000 },
+  { date: "2025-09-02", shares: 318877000 },
+  { date: "2025-09-15", shares: 319500000 },
+  { date: "2025-09-29", shares: 320094000 },
+  { date: "2025-11-03", shares: 320277000 },
+  { date: "2025-11-17", shares: 320283000 },
+  { date: "2025-12-01", shares: 328510000 },
+  { date: "2025-12-08", shares: 333631000 },
+  { date: "2025-12-15", shares: 338444000 },
+  { date: "2025-12-29", shares: 343641000 },
+  { date: "2025-12-31", shares: 344897000 },
+  { date: "2026-01-05", shares: 345632000 },
+  { date: "2026-01-12", shares: 352204000 },
+  { date: "2026-01-20", shares: 362606000 },
+  { date: "2026-01-26", shares: 364173000 },
+  { date: "2026-02-02", shares: 364845000 },
+  { date: "2026-02-09", shares: 365461000 },
+  { date: "2026-02-23", shares: 366419000 },
+  { date: "2026-03-02", shares: 368154000 },
+  { date: "2026-03-09", shares: 374506000 },
+  { date: "2026-03-16", shares: 377340000 },
+];
+
+// Cache for scraped data
+let _scrapedHoldings: { date: string; holdings: number }[] | null = null;
+let _scrapedShares: { date: string; shares: number }[] | null = null;
+let _lastScrapeTime = 0;
+const SCRAPE_CACHE_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+async function fetchScrapedData(): Promise<{
+  holdings: { date: string; holdings: number }[];
+  shares: { date: string; shares: number }[];
+} | null> {
+  const now = Date.now();
+  if (_scrapedHoldings && _scrapedShares && now - _lastScrapeTime < SCRAPE_CACHE_MS) {
+    return { holdings: _scrapedHoldings, shares: _scrapedShares };
+  }
+
+  try {
+    const res = await fetch("https://www.strategy.com/purchases", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!res.ok) return null;
+
+    const html = await res.text();
+    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+    if (!match?.[1]) return null;
+
+    const nextData = JSON.parse(match[1]);
+    const purchases: any[] = nextData?.props?.pageProps?.purchases || [];
+    if (purchases.length === 0) return null;
+
+    const holdings = purchases
+      .filter((p: any) => p.date_of_purchase && p.btc_holdings != null)
+      .map((p: any) => ({
+        date: p.date_of_purchase,
+        holdings: p.btc_holdings as number,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const shares = purchases
+      .filter((p: any) => p.date_of_purchase && p.assumed_diluted_shares_outstanding != null)
+      .map((p: any) => ({
+        date: p.date_of_purchase,
+        shares: p.assumed_diluted_shares_outstanding as number,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    _scrapedHoldings = holdings;
+    _scrapedShares = shares;
+    _lastScrapeTime = now;
+    console.log(`[scraper] Updated from strategy.com: ${holdings.length} holdings, ${shares.length} shares entries`);
+    return { holdings, shares };
+  } catch (e) {
+    console.error("[scraper] Failed to scrape strategy.com:", e);
+    return null;
+  }
+}
+
+// Merged timeline: scraped data takes priority, fallback fills gaps
+async function getBtcHoldingsTimeline(): Promise<{ date: string; holdings: number }[]> {
+  const scraped = await fetchScrapedData();
+  if (!scraped) return FALLBACK_BTC_HOLDINGS;
+
+  // Merge: use fallback for older dates not in scraped data, then scraped
+  const scrapedDates = new Set(scraped.holdings.map((h) => h.date));
+  const fallbackOnly = FALLBACK_BTC_HOLDINGS.filter((f) => !scrapedDates.has(f.date));
+  return [...fallbackOnly, ...scraped.holdings].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function getSharesTimeline(): Promise<{ date: string; shares: number }[]> {
+  const scraped = await fetchScrapedData();
+  if (!scraped) return FALLBACK_SHARES;
+
+  const scrapedDates = new Set(scraped.shares.map((s) => s.date));
+  const fallbackOnly = FALLBACK_SHARES.filter((f) => !scrapedDates.has(f.date));
+  return [...fallbackOnly, ...scraped.shares].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function getBtcHoldings(dateStr: string): Promise<number> {
+  const timeline = await getBtcHoldingsTimeline();
+  let holdings = timeline[0].holdings;
+  for (const entry of timeline) {
     if (dateStr >= entry.date) {
       holdings = entry.holdings;
     } else break;
@@ -61,34 +172,17 @@ export function getBtcHoldings(dateStr: string): number {
 
 // Shares outstanding (post 10:1 split on 2024-08-08)
 // ADSO from https://www.strategy.com/purchases
-function getSharesOutstanding(dateStr: string): number {
-  if (dateStr >= "2026-03-16") return 377340000;
-  if (dateStr >= "2026-03-09") return 374506000;
-  if (dateStr >= "2026-03-02") return 368154000;
-  if (dateStr >= "2026-02-23") return 366419000;
-  if (dateStr >= "2026-02-09") return 365461000;
-  if (dateStr >= "2026-02-02") return 364845000;
-  if (dateStr >= "2026-01-26") return 364173000;
-  if (dateStr >= "2026-01-20") return 362606000;
-  if (dateStr >= "2026-01-12") return 352204000;
-  if (dateStr >= "2026-01-05") return 345632000;
-  if (dateStr >= "2025-12-31") return 344897000;
-  if (dateStr >= "2025-12-29") return 343641000;
-  if (dateStr >= "2025-12-15") return 338444000;
-  if (dateStr >= "2025-12-08") return 333631000;
-  if (dateStr >= "2025-12-01") return 328510000;
-  if (dateStr >= "2025-11-17") return 320283000;
-  if (dateStr >= "2025-11-03") return 320277000;
-  if (dateStr >= "2025-09-29") return 320094000;
-  if (dateStr >= "2025-09-15") return 319500000;
-  if (dateStr >= "2025-09-02") return 318877000;
-  if (dateStr >= "2025-08-25") return 317624000;
-  if (dateStr >= "2025-08-18") return 316727000;
-  if (dateStr >= "2025-06-01") return 244000000;
-  if (dateStr >= "2025-01-01") return 218500000;
-  if (dateStr >= "2024-10-01") return 182000000;
-  if (dateStr >= "2024-08-08") return 166900000;
-  return 166900000;
+async function getSharesOutstanding(dateStr: string): Promise<number> {
+  const timeline = await getSharesTimeline();
+  // Default for pre-split dates
+  if (dateStr < timeline[0]?.date) return 166900000;
+  let shares = timeline[0].shares;
+  for (const entry of timeline) {
+    if (dateStr >= entry.date) {
+      shares = entry.shares;
+    } else break;
+  }
+  return shares;
 }
 
 export async function fetchBtcPrices(
@@ -126,19 +220,20 @@ export async function fetchMstrData(
   const timestamps = result.timestamp || [];
   const closes = result.indicators?.quote?.[0]?.close || [];
   
-  return timestamps
-    .map((ts: number, i: number) => {
+  const entries = await Promise.all(
+    timestamps.map(async (ts: number, i: number) => {
       const close = closes[i];
       if (close == null) return null;
       const dateStr = new Date(ts * 1000).toISOString().split("T")[0];
-      const shares = getSharesOutstanding(dateStr);
+      const shares = await getSharesOutstanding(dateStr);
       return {
         date: dateStr,
         close: Math.round(close * 100) / 100,
         marketCap: close * shares,
       };
     })
-    .filter(Boolean);
+  );
+  return entries.filter(Boolean) as { date: string; close: number; marketCap: number }[];
 }
 
 export function calculateMNAV(
